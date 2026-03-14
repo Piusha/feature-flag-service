@@ -4,16 +4,17 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: laravel-app
+    restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./:/var/www
+      - vendor_data:/var/www/vendor
     command: >
-      sh -c "composer install &&
+      sh -c "if [ ! -f vendor/autoload.php ]; then composer install; fi &&
              php artisan key:generate --force &&
              php artisan migrate --force &&
              php artisan db:seed --force &&
-             php artisan storage:link ||
-             true &&
+             (php artisan storage:link || true) &&
              php artisan serve --host=0.0.0.0 --port=8000"
     ports:
       - "8000:8000"
@@ -27,6 +28,13 @@ services:
       DB_DATABASE: app_db
       DB_USERNAME: app_user
       DB_PASSWORD: app_pass
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_QUEUE_CONNECTION: default
+      REDIS_QUEUE: event-logs
+      REDIS_QUEUE_RETRY_AFTER: 120
+      REDIS_QUEUE_AFTER_COMMIT: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
       FEATURE_FLAGS_CACHE_TTL: 60
@@ -36,6 +44,47 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
+  queue-worker:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: laravel-queue-worker
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - vendor_data:/var/www/vendor
+    command: >
+      sh -c "if [ ! -f vendor/autoload.php ]; then composer install; fi &&
+             php artisan queue:work redis --queue=event-logs,default --sleep=1 --tries=3 --timeout=90"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: app_db
+      DB_USERNAME: app_user
+      DB_PASSWORD: app_pass
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_QUEUE_CONNECTION: default
+      REDIS_QUEUE: event-logs
+      REDIS_QUEUE_RETRY_AFTER: 120
+      REDIS_QUEUE_AFTER_COMMIT: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      FEATURE_FLAGS_CACHE_TTL: 60
+      FEATURE_FLAGS_DEFAULT_ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
 
   postgres:
     image: postgres:16-alpine
@@ -68,3 +117,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  vendor_data:

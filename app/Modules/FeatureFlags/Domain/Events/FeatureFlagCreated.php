@@ -2,8 +2,6 @@
 
 namespace App\Modules\FeatureFlags\Domain\Events;
 
-use Carbon\CarbonImmutable;
-
 readonly class FeatureFlagCreated
 {
     /**
@@ -15,6 +13,6 @@ readonly class FeatureFlagCreated
         public ?string $actorId,
         public ?string $actorType,
         public ?array $context,
-        public CarbonImmutable $occurredAt,
+        public \DateTimeImmutable $occurredAt,
     ) {}
 }

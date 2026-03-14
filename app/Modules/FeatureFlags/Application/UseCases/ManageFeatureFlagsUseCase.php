@@ -6,12 +6,19 @@ use App\Modules\FeatureFlags\Application\DTO\CreateFeatureFlagCommand;
 use App\Modules\FeatureFlags\Application\DTO\FeatureFlagListResponse;
 use App\Modules\FeatureFlags\Application\DTO\FeatureFlagResponse;
 use App\Modules\FeatureFlags\Application\DTO\UpdateFeatureFlagCommand;
+use App\Modules\FeatureFlags\Application\Contracts\ActorContextProviderInterface;
 use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagCacheInterface;
 use App\Modules\FeatureFlags\Application\Contracts\ManageFeatureFlagsUseCaseInterface;
 use App\Modules\FeatureFlags\Application\Mappers\FeatureFlagResponseMapper;
 use App\Modules\FeatureFlags\Domain\Entities\FeatureFlagEntity;
+use App\Modules\FeatureFlags\Domain\Events\FeatureFlagCreated;
+use App\Modules\FeatureFlags\Domain\Events\FeatureFlagDeleted;
+use App\Modules\FeatureFlags\Domain\Events\FeatureFlagUpdated;
 use App\Modules\FeatureFlags\Domain\Repositories\FeatureFlagRepository;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FlagSchedule;
+use App\SharedKernel\Domain\Clock;
+use RuntimeException;
+use Illuminate\Support\Facades\Event;
 
 class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
 {
@@ -19,6 +26,8 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
         private readonly FeatureFlagRepository $featureFlags,
         private readonly FeatureFlagCacheInterface $cache,
         private readonly FeatureFlagResponseMapper $mapper,
+        private readonly ActorContextProviderInterface $actorContextProvider,
+        private readonly Clock $clock,
     ) {}
 
     public function listPaginated(int $perPage = 15, int $page = 1): FeatureFlagListResponse
@@ -59,6 +68,25 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
             schedule: $command->schedule,
         ));
 
+        $actor = $this->actorContextProvider->resolve();
+        $aggregateId = $featureFlag->id();
+
+        if ($aggregateId === null) {
+            throw new RuntimeException('Cannot dispatch creation event for feature flag without aggregate id.');
+        }
+
+        Event::dispatch(new FeatureFlagCreated(
+            aggregateId: $aggregateId,
+            featureFlagKey: $featureFlag->key()->value(),
+            actorId: $actor->actorId,
+            actorType: $actor->actorType,
+            context: [
+                'module' => 'feature_flags',
+                'operation' => 'create',
+            ],
+            occurredAt: $this->clock->now(),
+        ));
+
         $this->cache->invalidateAllContexts();
 
         return $this->mapper->toResponse($featureFlag);
@@ -89,6 +117,26 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
             schedule: $schedule,
         ));
 
+        $actor = $this->actorContextProvider->resolve();
+        $aggregateId = $updated->id();
+
+        if ($aggregateId === null) {
+            throw new RuntimeException('Cannot dispatch update event for feature flag without aggregate id.');
+        }
+
+        Event::dispatch(new FeatureFlagUpdated(
+            aggregateId: $aggregateId,
+            featureFlagKey: $updated->key()->value(),
+            actorId: $actor->actorId,
+            actorType: $actor->actorType,
+            changes: $this->buildChanges($existing, $updated),
+            context: [
+                'module' => 'feature_flags',
+                'operation' => 'update',
+            ],
+            occurredAt: $this->clock->now(),
+        ));
+
         $this->cache->invalidateAllContexts();
 
         return $this->mapper->toResponse($updated);
@@ -96,7 +144,63 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
 
     public function delete(int $id): void
     {
+        $existing = $this->featureFlags->findById($id);
+
+        if ($existing === null) {
+            return;
+        }
+
         $this->featureFlags->deleteById($id);
+
+        $actor = $this->actorContextProvider->resolve();
+
+        Event::dispatch(new FeatureFlagDeleted(
+            aggregateId: $id,
+            featureFlagKey: $existing->key()->value(),
+            actorId: $actor->actorId,
+            actorType: $actor->actorType,
+            context: [
+                'module' => 'feature_flags',
+                'operation' => 'delete',
+            ],
+            occurredAt: $this->clock->now(),
+        ));
+
         $this->cache->invalidateAllContexts();
+    }
+
+    private function buildChanges(FeatureFlagEntity $existing, FeatureFlagEntity $updated): array
+    {
+        $before = $this->toComparableState($existing);
+        $after = $this->toComparableState($updated);
+        $changes = [];
+
+        foreach ($after as $field => $newValue) {
+            $oldValue = $before[$field] ?? null;
+
+            if ($oldValue !== $newValue) {
+                $changes[$field] = [
+                    'old' => $oldValue,
+                    'new' => $newValue,
+                ];
+            }
+        }
+
+        return $changes;
+    }
+
+    private function toComparableState(FeatureFlagEntity $entity): array
+    {
+        return [
+            'key' => $entity->key()->value(),
+            'name' => $entity->name(),
+            'description' => $entity->description(),
+            'type' => $entity->type()->value,
+            'scope' => $entity->scope()->value,
+            'enabled' => $entity->enabled(),
+            'rollout_percentage' => $entity->rolloutPercentage()?->value(),
+            'starts_at' => $entity->schedule()->startsAt()?->format(DATE_ATOM),
+            'expires_at' => $entity->schedule()->expiresAt()?->format(DATE_ATOM),
+        ];
     }
 }

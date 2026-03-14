@@ -69,7 +69,7 @@ class FeatureEnforcementTest extends TestCase
         ]);
 
         $response = $this->postJson("/api/reports/{$report->id}/photos?user_id=456", [
-            'photo' => UploadedFile::fake()->image('damage.jpg'),
+            'photo' => UploadedFile::fake()->create('damage.jpg', 64, 'image/jpeg'),
             'user_id' => '456',
         ]);
 

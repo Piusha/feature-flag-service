@@ -2,8 +2,6 @@
 
 namespace App\Modules\EventLogs\Domain\Entities;
 
-use Carbon\CarbonImmutable;
-
 final class EventLogEntry
 {
     /**
@@ -19,8 +17,8 @@ final class EventLogEntry
         public readonly ?string $actorType,
         public readonly ?array $context,
         public readonly array $payload,
-        public readonly CarbonImmutable $occurredAt,
-        public readonly ?CarbonImmutable $createdAt = null,
-        public readonly ?CarbonImmutable $updatedAt = null,
+        public readonly \DateTimeImmutable $occurredAt,
+        public readonly ?\DateTimeImmutable $createdAt = null,
+        public readonly ?\DateTimeImmutable $updatedAt = null,
     ) {}
 }

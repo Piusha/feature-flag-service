@@ -2,8 +2,6 @@
 
 namespace App\Modules\EventLogs\Application\DTO;
 
-use Carbon\CarbonImmutable;
-
 final class StoreEventLogData
 {
     /**
@@ -18,6 +16,6 @@ final class StoreEventLogData
         public readonly ?string $actorType,
         public readonly ?array $context,
         public readonly array $payload,
-        public readonly CarbonImmutable $occurredAt,
+        public readonly \DateTimeImmutable $occurredAt,
     ) {}
 }

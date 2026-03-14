@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Modules\CarDamageReports\Application\Contracts\ManageCarDamageReportsUseCaseInterface;
 use App\Modules\CarDamageReports\Application\UseCases\ManageCarDamageReportsUseCase;
+use App\Modules\EventLogs\Application\UseCases\QueryEventLogsUseCase;
 use App\Modules\CarDamageReports\Domain\Repositories\CarDamageReportRepository;
 use App\Modules\CarDamageReports\Infrastructure\Repositories\EloquentCarDamageReportRepository;
 use App\Modules\EventLogs\Domain\Repositories\EventLogRepository;
 use App\Modules\EventLogs\Infrastructure\Repositories\EloquentEventLogRepository;
+use App\Modules\FeatureFlags\Application\Contracts\ActorContextProviderInterface;
 use App\Modules\FeatureFlags\Application\Contracts\AssertFeatureEnabledUseCaseInterface;
 use App\Modules\FeatureFlags\Application\Contracts\EvaluateFeatureFlagsUseCaseInterface;
 use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagCacheInterface;
@@ -21,6 +23,7 @@ use App\Modules\FeatureFlags\Application\UseCases\AssertFeatureEnabledUseCase;
 use App\Modules\FeatureFlags\Application\UseCases\EvaluateFeatureFlagsUseCase;
 use App\Modules\FeatureFlags\Application\UseCases\ManageFeatureFlagsUseCase;
 use App\Modules\FeatureFlags\Domain\Repositories\FeatureFlagRepository;
+use App\Modules\FeatureFlags\Infrastructure\Support\CurrentActorContextProvider;
 use App\Modules\FeatureFlags\Infrastructure\Repositories\EloquentFeatureFlagRepository;
 use App\SharedKernel\Domain\Clock;
 use App\SharedKernel\Infrastructure\SystemClock;
@@ -41,7 +44,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(EvaluateFeatureFlagsUseCaseInterface::class, EvaluateFeatureFlagsUseCase::class);
         $this->app->bind(ManageFeatureFlagsUseCaseInterface::class, ManageFeatureFlagsUseCase::class);
         $this->app->bind(AssertFeatureEnabledUseCaseInterface::class, AssertFeatureEnabledUseCase::class);
+        $this->app->bind(ActorContextProviderInterface::class, CurrentActorContextProvider::class);
         $this->app->bind(ManageCarDamageReportsUseCaseInterface::class, ManageCarDamageReportsUseCase::class);
+        $this->app->bind(QueryEventLogsUseCase::class, QueryEventLogsUseCase::class);
 
         $this->app->bind(FeatureFlagRepository::class, EloquentFeatureFlagRepository::class);
         $this->app->bind(CarDamageReportRepository::class, EloquentCarDamageReportRepository::class);

@@ -8,6 +8,7 @@ use App\Modules\FeatureFlags\Domain\Repositories\FeatureFlagRepository;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FeatureFlagKey;
 use App\Modules\FeatureFlags\Infrastructure\Mappers\FeatureFlagMapper;
 use App\Modules\FeatureFlags\Infrastructure\Models\FeatureFlag;
+use Illuminate\Support\Facades\DB;
 
 class EloquentFeatureFlagRepository implements FeatureFlagRepository
 {
@@ -59,23 +60,29 @@ class EloquentFeatureFlagRepository implements FeatureFlagRepository
 
     public function create(FeatureFlagEntity $featureFlag): FeatureFlagEntity
     {
-        /** @var FeatureFlag $created */
-        $created = FeatureFlag::query()->create($this->mapper->toPersistence($featureFlag));
+        return DB::transaction(function () use ($featureFlag): FeatureFlagEntity {
+            /** @var FeatureFlag $created */
+            $created = FeatureFlag::query()->create($this->mapper->toPersistence($featureFlag));
 
-        return $this->mapper->toDomain($created);
+            return $this->mapper->toDomain($created);
+        });
     }
 
     public function update(FeatureFlagEntity $featureFlag): FeatureFlagEntity
     {
-        $model = FeatureFlag::query()->findOrFail($featureFlag->id());
-        $model->fill($this->mapper->toPersistence($featureFlag));
-        $model->save();
+        return DB::transaction(function () use ($featureFlag): FeatureFlagEntity {
+            $model = FeatureFlag::query()->findOrFail($featureFlag->id());
+            $model->fill($this->mapper->toPersistence($featureFlag));
+            $model->save();
 
-        return $this->mapper->toDomain($model);
+            return $this->mapper->toDomain($model);
+        });
     }
 
     public function deleteById(int $id): void
     {
-        FeatureFlag::query()->whereKey($id)->delete();
+        DB::transaction(function () use ($id): void {
+            FeatureFlag::query()->whereKey($id)->delete();
+        });
     }
 }

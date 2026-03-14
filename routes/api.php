@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\CarDamageReports\Presentation\Http\Controllers\Api\CarDamageReportController;
+use App\Modules\EventLogs\Presentation\Http\Controllers\Api\AdminEventLogController;
 use App\Modules\FeatureFlags\Presentation\Http\Controllers\Api\AdminFeatureFlagController;
 use App\Modules\FeatureFlags\Presentation\Http\Controllers\Api\FeatureFlagEvaluationController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,9 @@ Route::prefix('admin')->group(function (): void {
     Route::get('/feature-flags/{id}', [AdminFeatureFlagController::class, 'show']);
     Route::put('/feature-flags/{id}', [AdminFeatureFlagController::class, 'update']);
     Route::delete('/feature-flags/{id}', [AdminFeatureFlagController::class, 'destroy']);
+
+    Route::get('/event-logs', [AdminEventLogController::class, 'index']);
+    Route::get('/event-logs/{id}', [AdminEventLogController::class, 'show'])->whereNumber('id');
 });
 
 Route::get('/feature-flags/evaluate', FeatureFlagEvaluationController::class);

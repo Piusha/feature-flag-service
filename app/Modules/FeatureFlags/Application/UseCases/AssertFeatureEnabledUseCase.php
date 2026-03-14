@@ -4,15 +4,19 @@ namespace App\Modules\FeatureFlags\Application\UseCases;
 
 use App\Modules\FeatureFlags\Application\Contracts\AssertFeatureEnabledUseCaseInterface;
 use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagEvaluatorInterface;
+use App\Modules\FeatureFlags\Domain\Events\FeatureFlagEvaluationDenied;
 use App\Modules\FeatureFlags\Domain\Repositories\FeatureFlagRepository;
 use App\Modules\FeatureFlags\Domain\ValueObjects\EvaluationContext;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FeatureFlagKey;
+use App\SharedKernel\Domain\Clock;
+use Illuminate\Support\Facades\Event;
 
 class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterface
 {
     public function __construct(
         private readonly FeatureFlagRepository $featureFlags,
         private readonly FeatureFlagEvaluatorInterface $evaluator,
+        private readonly Clock $clock,
     ) {
     }
 
@@ -24,6 +28,24 @@ class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterfac
             return false;
         }
 
-        return $this->evaluator->evaluate($featureFlag, $context);
+        $enabled = $this->evaluator->evaluate($featureFlag, $context);
+
+        if (! $enabled && $featureFlag->id() !== null) {
+            Event::dispatch(new FeatureFlagEvaluationDenied(
+                aggregateId: $featureFlag->id(),
+                featureFlagKey: $featureKey->value(),
+                reason: 'feature_not_enabled_for_context',
+                actorId: $context->userId(),
+                actorType: 'user',
+                context: [
+                    'module' => 'feature_flags',
+                    'operation' => 'assert_feature_enabled',
+                    'user_id' => $context->userId(),
+                ],
+                occurredAt: $this->clock->now(),
+            ));
+        }
+
+        return $enabled;
     }
 }
