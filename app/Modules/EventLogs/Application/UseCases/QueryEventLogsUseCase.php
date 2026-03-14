@@ -6,15 +6,20 @@ use App\Modules\EventLogs\Domain\Entities\EventLogEntry;
 use App\Modules\EventLogs\Domain\Entities\EventLogPage;
 use App\Modules\EventLogs\Domain\Repositories\EventLogRepository;
 use App\Modules\EventLogs\Domain\ValueObjects\EventLogQueryFilters;
+use Illuminate\Support\Facades\Log;
 
 final class QueryEventLogsUseCase
 {
-    public function __construct(private readonly EventLogRepository $eventLogs)
-    {
-    }
+    public function __construct(private readonly EventLogRepository $eventLogs) {}
 
     public function list(EventLogQueryFilters $filters, int $perPage = 20, int $page = 1): EventLogPage
     {
+        Log::info('Querying event logs', [
+            'filters' => $filters,
+            'perPage' => $perPage,
+            'page' => $page,
+        ]);
+
         return $this->eventLogs->paginate($filters, $perPage, $page);
     }
 

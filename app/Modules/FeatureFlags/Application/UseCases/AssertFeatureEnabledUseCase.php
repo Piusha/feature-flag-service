@@ -10,6 +10,7 @@ use App\Modules\FeatureFlags\Domain\ValueObjects\EvaluationContext;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FeatureFlagKey;
 use App\SharedKernel\Domain\Clock;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 
 class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterface
 {
@@ -17,8 +18,7 @@ class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterfac
         private readonly FeatureFlagRepository $featureFlags,
         private readonly FeatureFlagEvaluatorInterface $evaluator,
         private readonly Clock $clock,
-    ) {
-    }
+    ) {}
 
     public function handle(FeatureFlagKey $featureKey, EvaluationContext $context): bool
     {
@@ -27,6 +27,11 @@ class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterfac
         if ($featureFlag === null) {
             return false;
         }
+
+        Log::info('Evaluating feature flag', [
+            'featureFlag' => $featureFlag,
+            'context' => $context,
+        ]);
 
         $enabled = $this->evaluator->evaluate($featureFlag, $context);
 
@@ -45,6 +50,11 @@ class AssertFeatureEnabledUseCase implements AssertFeatureEnabledUseCaseInterfac
                 occurredAt: $this->clock->now(),
             ));
         }
+        Log::info('Feature flag evaluated', [
+            'featureFlag' => $featureFlag,
+            'context' => $context,
+            'enabled' => $enabled,
+        ]);
 
         return $enabled;
     }

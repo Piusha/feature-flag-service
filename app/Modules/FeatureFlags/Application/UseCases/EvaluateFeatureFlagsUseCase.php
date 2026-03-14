@@ -9,6 +9,7 @@ use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagCacheInterface;
 use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagEvaluatorInterface;
 use App\Modules\FeatureFlags\Domain\Repositories\FeatureFlagRepository;
 use App\SharedKernel\Domain\Clock;
+use Illuminate\Support\Facades\Log;
 
 class EvaluateFeatureFlagsUseCase implements EvaluateFeatureFlagsUseCaseInterface
 {
@@ -24,6 +25,11 @@ class EvaluateFeatureFlagsUseCase implements EvaluateFeatureFlagsUseCaseInterfac
         $ttlSeconds = (int) config('feature_flags.cache_ttl_seconds', 60);
         $context = $query->context;
 
+        Log::info('Evaluating feature flags', [
+            'context' => $context,
+            'ttlSeconds' => $ttlSeconds,
+        ]);
+
         $flags = $this->cache->getOrRemember($context, $ttlSeconds, function () use ($context): array {
             $evaluated = [];
 
@@ -33,6 +39,9 @@ class EvaluateFeatureFlagsUseCase implements EvaluateFeatureFlagsUseCaseInterfac
 
             return $evaluated;
         });
+        Log::info('Feature flags evaluated', [
+            'flags' => $flags,
+        ]);
 
         return new FeatureFlagEvaluationResponse(
             userId: $context->userId(),

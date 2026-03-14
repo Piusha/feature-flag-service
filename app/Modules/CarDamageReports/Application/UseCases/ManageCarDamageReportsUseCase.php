@@ -16,19 +16,19 @@ use App\Modules\CarDamageReports\Domain\Entities\ReportPhotoEntity;
 use App\Modules\CarDamageReports\Domain\Repositories\CarDamageReportRepository;
 use App\Modules\CarDamageReports\Domain\ValueObjects\ReportReferenceNumber;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInterface
 {
     public function __construct(
         private readonly CarDamageReportRepository $reports,
         private readonly CarDamageReportResponseMapper $mapper,
-    ) {
-    }
+    ) {}
 
     public function listPaginated(int $perPage = 15, int $page = 1): CarDamageReportListResponse
     {
         $paginated = $this->reports->paginate($perPage, $page);
-        $items = array_map(fn ($entity): CarDamageReportResponse => $this->mapper->toResponse($entity), $paginated->items());
+        $items = array_map(fn($entity): CarDamageReportResponse => $this->mapper->toResponse($entity), $paginated->items());
 
         return new CarDamageReportListResponse(
             items: $items,
@@ -48,6 +48,9 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
 
     public function create(CreateCarDamageReportCommand $command): CarDamageReportResponse
     {
+        Log::info('Creating car damage report', [
+            'command' => $command,
+        ]);
         $report = $this->reports->create(new CarDamageReportEntity(
             id: null,
             referenceNumber: new ReportReferenceNumber($this->generateReferenceNumber()),
@@ -77,6 +80,11 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
             return null;
         }
 
+        Log::info('Updating car damage report', [
+            'command' => $command,
+            'existing' => $existing,
+        ]);
+
         $updated = $this->reports->update(new CarDamageReportEntity(
             id: $existing->id(),
             referenceNumber: $existing->referenceNumber(),
@@ -95,6 +103,10 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
             history: $existing->history(),
         ));
 
+        Log::info('Car damage report updated', [
+            'updated' => $updated,
+        ]);
+
         $this->reports->appendHistory($updated->id() ?? 0, 'report_updated', 'Report was updated.');
         $fresh = $this->reports->findById($updated->id() ?? 0);
 
@@ -103,6 +115,9 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
 
     public function addPhoto(UploadReportPhotoCommand $command): ?ReportPhotoResponse
     {
+        Log::info('Adding photo to car damage report', [
+            'command' => $command,
+        ]);
         $report = $this->reports->findById($command->reportId);
 
         if ($report === null) {
@@ -122,6 +137,10 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
             )
         );
 
+        Log::info('Photo added to car damage report', [
+            'photo' => $photo,
+        ]);
+
         $this->reports->appendHistory($command->reportId, 'photo_uploaded', 'A report photo was uploaded.');
 
         return $this->mapper->mapPhoto($photo);
@@ -129,20 +148,29 @@ class ManageCarDamageReportsUseCase implements ManageCarDamageReportsUseCaseInte
 
     public function history(int $reportId): ?array
     {
+        Log::info('Getting history for car damage report', [
+            'reportId' => $reportId,
+        ]);
         $report = $this->reports->findById($reportId);
 
         if ($report === null) {
             return null;
         }
 
+        $history = $this->reports->historyForReport($reportId);
+
+        Log::info('History for car damage report', [
+            'history' => $history,
+        ]);
+
         return array_map(
-            fn ($item): ReportHistoryResponse => $this->mapper->mapHistory($item),
-            $this->reports->historyForReport($reportId)
+            fn($item): ReportHistoryResponse => $this->mapper->mapHistory($item),
+            $history
         );
     }
 
     private function generateReferenceNumber(): string
     {
-        return 'CDR-'.now()->format('Ymd').'-'.Str::upper(Str::random(6));
+        return 'CDR-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6));
     }
 }

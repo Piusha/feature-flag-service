@@ -19,6 +19,7 @@ use App\Modules\FeatureFlags\Domain\ValueObjects\FlagSchedule;
 use App\SharedKernel\Domain\Clock;
 use RuntimeException;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 
 class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
 {
@@ -56,6 +57,9 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
 
     public function create(CreateFeatureFlagCommand $command): FeatureFlagResponse
     {
+        Log::info('Creating feature flag', [
+            'command' => $command,
+        ]);
         $featureFlag = $this->featureFlags->create(new FeatureFlagEntity(
             id: null,
             key: $command->key,
@@ -72,6 +76,9 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
         $aggregateId = $featureFlag->id();
 
         if ($aggregateId === null) {
+            Log::error('Cannot dispatch creation event for feature flag without aggregate id.', [
+                'command' => $command,
+            ]);
             throw new RuntimeException('Cannot dispatch creation event for feature flag without aggregate id.');
         }
 
@@ -100,6 +107,11 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
             return null;
         }
 
+        Log::info('Updating feature flag', [
+            'command' => $command,
+            'existing' => $existing,
+        ]);
+
         $schedule = new FlagSchedule(
             startsAt: $command->hasStartsAt ? $command->startsAt : $existing->schedule()->startsAt(),
             expiresAt: $command->hasExpiresAt ? $command->expiresAt : $existing->schedule()->expiresAt(),
@@ -121,6 +133,10 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
         $aggregateId = $updated->id();
 
         if ($aggregateId === null) {
+            Log::error('Cannot dispatch update event for feature flag without aggregate id.', [
+                'command' => $command,
+                'existing' => $existing,
+            ]);
             throw new RuntimeException('Cannot dispatch update event for feature flag without aggregate id.');
         }
 
@@ -147,6 +163,9 @@ class ManageFeatureFlagsUseCase implements ManageFeatureFlagsUseCaseInterface
         $existing = $this->featureFlags->findById($id);
 
         if ($existing === null) {
+            Log::debug('Cannot dispatch delete event for feature flag without existing feature flag.', [
+                'id' => $id,
+            ]);
             return;
         }
 
