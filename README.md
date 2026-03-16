@@ -4,7 +4,7 @@ Production-style take-home backend using a modular monolith with DDD-inspired bo
 
 Architecture notes are documented in `ARCHITECTURE_DECISION.md`.
 
-## Assignment Assumptions
+## Assumptions
 - No API Authentication and Authorisations
 - Feature flag rules are **not user-specific** in this scope.
 - `rule_based` rollout is deterministic by **flag key only** (no `user_id` targeting).

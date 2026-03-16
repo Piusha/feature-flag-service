@@ -3,7 +3,7 @@
 ## Context
 
 This take-home backend includes a feature flag module and car damage report APIs.
-The assignment scope prioritizes simplicity, deterministic behavior, and fast evaluator setup over advanced targeting.
+The scope prioritizes simplicity, deterministic behavior, and fast evaluator setup over advanced targeting.
 
 Originally, evaluation could be modeled with user-targeted rollout (`key:user_id`), but user-level segmentation is not required for this submission.
 
@@ -19,7 +19,7 @@ Originally, evaluation could be modeled with user-targeted rollout (`key:user_id
 
 - Reduces complexity in domain rules and cache key design.
 - Makes behavior easy to reason about during review.
-- Matches assignment scope where user-specific rules are out of scope.
+- Matches scope where user-specific rules are out of scope.
 - Avoids ambiguity about identity requirements in API requests.
 
 ## Consequences
