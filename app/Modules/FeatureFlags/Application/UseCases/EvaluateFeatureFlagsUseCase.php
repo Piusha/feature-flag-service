@@ -22,8 +22,7 @@ class EvaluateFeatureFlagsUseCase implements EvaluateFeatureFlagsUseCaseInterfac
 
     public function handle(EvaluateFlagsQuery $query): FeatureFlagEvaluationResponse
     {
-        // $ttlSeconds = (int) config('feature_flags.cache_ttl_seconds', 1);
-        $ttlSeconds = 1;
+        $ttlSeconds = (int) config('feature_flags.cache_ttl_seconds', 1);
         $context = $query->context;
 
         Log::info('Evaluating feature flags', [

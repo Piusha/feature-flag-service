@@ -2,6 +2,14 @@
 
 Production-style take-home backend using a modular monolith with DDD-inspired boundaries.
 
+Architecture notes are documented in `ARCHITECTURE_DECISION.md`.
+
+## Assignment Assumptions
+- No API Authentication and Authorisations
+- Feature flag rules are **not user-specific** in this scope.
+- `rule_based` rollout is deterministic by **flag key only** (no `user_id` targeting).
+- This keeps behavior simple and predictable for evaluator review.
+
 ## Folder Structure
 
 `app/Modules/FeatureFlags`
@@ -26,7 +34,9 @@ Production-style take-home backend using a modular monolith with DDD-inspired bo
 - `DELETE /api/admin/feature-flags/{id}`
 
 ### Feature Flag Evaluation API
-- `GET /api/feature-flags/evaluate?user_id=123`
+- `GET /api/feature-flags/evaluate`
+
+Note: `user_id` can still be sent for backward compatibility, but evaluation output does not vary by user in this assignment.
 
 ### Car Damage Reports API
 - `GET /api/reports`
@@ -48,35 +58,86 @@ Applied in this order:
 1. `enabled = false` -> `false`
 2. `starts_at` in future -> `false`
 3. `expires_at` in past -> `false`
-4. `rule_based` -> percentage rollout by deterministic hash of `key:user_id`
+4. `rule_based` -> percentage rollout by deterministic hash of `key`
 5. otherwise `enabled`
 
 ## Cache Strategy
 
-- Evaluated results are cached by context with key format: `flags:v{version}:{sha1(user_id)}`
+- Evaluated results are cached globally with key format: `flags:v{version}`
 - TTL configured by `FEATURE_FLAGS_CACHE_TTL` (default `60`)
 - Invalidation strategy: bump global cache version on create/update/delete
 
 Tradeoff:
-- Version bump is simple and robust for high traffic, but it invalidates all contexts (not just affected subset).
+- Version bump is simple and robust, but it invalidates the full evaluation cache.
 
-## Run Locally (Docker)
+## Run Application (Evaluator-Friendly)
+
+### Option 1: Docker (recommended)
+
+For the fastest review setup:
 
 ```bash
 docker compose up --build
 ```
 
-Backend runs at `http://localhost:8000`.
+Then, in order to load Blade admin UI styling/scripts:
 
-## Run Locally (without Docker)
+```bash
+npm install
+npm run build
+```
+
+Notes:
+- API-only evaluation can skip Node build step.
+- Backend and APIs are available at `http://localhost:8000`.
+- Database migrations and seeders run automatically in Docker startup.
+
+
+With Docker, the backend container automatically runs:
+- `composer install` (if needed)
+- `php artisan key:generate --force`
+- `php artisan migrate --force`
+- `php artisan db:seed --force`
+
+### Option 2: Local (without Docker)
+
+Prerequisites:
+- PHP `^8.2`
+- Composer
+- Node.js + npm
+- PostgreSQL
+- Redis
+
+Setup:
 
 ```bash
 cp .env.example .env
 composer install
+npm install
 php artisan key:generate
-php artisan migrate
+php artisan migrate --seed
+```
+
+Run:
+
+```bash
+composer run dev
+```
+
+This starts Laravel server, queue listener, logs, and Vite concurrently.
+
+## Seed Data
+
+By default, seeders are imported for testing and evaluator convenience.
+
+- `DatabaseSeeder` calls:
+  - `FeatureFlagSeeder`
+  - `CarDamageReportSeeder`
+
+You can reseed locally with:
+
+```bash
 php artisan db:seed
-php artisan serve
 ```
 
 ## Test

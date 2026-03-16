@@ -24,7 +24,6 @@ class FeatureFlagCache implements FeatureFlagCacheInterface
     {
         $key = $this->keyForContext($context);
 
-        /** @var array $cached */
         $cached = $this->cache->remember($key, $ttlSeconds, $resolver);
 
         return $cached;
