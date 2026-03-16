@@ -27,6 +27,8 @@ class FeatureFlagEvaluator implements FeatureFlagEvaluatorInterface
             $now = $this->clock->now();
             $schedule = $featureFlag->schedule();
 
+
+
             if ($schedule->isBeforeStart($now)) {
                 return false;
             }
@@ -36,9 +38,8 @@ class FeatureFlagEvaluator implements FeatureFlagEvaluatorInterface
             }
 
             if ($featureFlag->type() === FeatureFlagType::RULE_BASED) {
-                return $this->percentageRollout->isUserInRollout(
+                return $this->percentageRollout->isInRollout(
                     $featureFlag->key(),
-                    $context->userId(),
                     $featureFlag->rolloutPercentage()
                 );
             }

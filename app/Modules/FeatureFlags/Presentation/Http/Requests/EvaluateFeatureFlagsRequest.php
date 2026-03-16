@@ -2,11 +2,11 @@
 
 namespace App\Modules\FeatureFlags\Presentation\Http\Requests;
 
+use App\Http\Requests\ApiFormRequest;
 use App\Modules\FeatureFlags\Application\DTO\EvaluateFlagsQuery;
 use App\Modules\FeatureFlags\Domain\ValueObjects\EvaluationContext;
-use Illuminate\Foundation\Http\FormRequest;
 
-class EvaluateFeatureFlagsRequest extends FormRequest
+class EvaluateFeatureFlagsRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {
@@ -15,9 +15,7 @@ class EvaluateFeatureFlagsRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'user_id' => ['required', 'string', 'max:255'],
-        ];
+        return [];
     }
 
     public function toQuery(): EvaluateFlagsQuery
@@ -26,7 +24,7 @@ class EvaluateFeatureFlagsRequest extends FormRequest
 
         return new EvaluateFlagsQuery(
             context: new EvaluationContext(
-                userId: $data['user_id'],
+                userId: $data['user_id'] ?? 'public',
             )
         );
     }

@@ -2,13 +2,13 @@
 
 namespace App\Modules\CarDamageReports\Presentation\Http\Requests;
 
+use App\Http\Requests\ApiFormRequest;
 use App\Modules\CarDamageReports\Application\DTO\UpdateCarDamageReportCommand;
 use App\Modules\CarDamageReports\Domain\Enums\ReportSeverity;
 use App\Modules\CarDamageReports\Domain\Enums\ReportStatus;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateCarDamageReportRequest extends FormRequest
+class UpdateCarDamageReportRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

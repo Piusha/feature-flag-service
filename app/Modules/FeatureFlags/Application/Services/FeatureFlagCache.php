@@ -5,6 +5,7 @@ namespace App\Modules\FeatureFlags\Application\Services;
 use App\Modules\FeatureFlags\Application\Contracts\FeatureFlagCacheInterface;
 use App\Modules\FeatureFlags\Domain\ValueObjects\EvaluationContext;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\Log;
 
 class FeatureFlagCache implements FeatureFlagCacheInterface
 {
@@ -15,9 +16,8 @@ class FeatureFlagCache implements FeatureFlagCacheInterface
     public function keyForContext(EvaluationContext $context): string
     {
         $version = (string) $this->cache->get(self::VERSION_KEY, '1');
-        $userHash = sha1($context->userId());
 
-        return "flags:v{$version}:{$userHash}";
+        return "flags:v{$version}";
     }
 
     public function getOrRemember(EvaluationContext $context, int $ttlSeconds, callable $resolver): array
@@ -32,7 +32,9 @@ class FeatureFlagCache implements FeatureFlagCacheInterface
 
     public function invalidateAllContexts(): void
     {
+
         $version = (int) $this->cache->get(self::VERSION_KEY, 1);
+        Log::info('Invalidating all contexts. Version: ' . $version);
         $this->cache->forever(self::VERSION_KEY, $version + 1);
     }
 }

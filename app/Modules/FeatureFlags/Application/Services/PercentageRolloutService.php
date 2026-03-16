@@ -8,7 +8,14 @@ use App\Modules\FeatureFlags\Domain\ValueObjects\RolloutPercentage;
 
 class PercentageRolloutService implements PercentageRolloutServiceInterface
 {
-    public function isUserInRollout(FeatureFlagKey $flagKey, string $userId, ?RolloutPercentage $percentage): bool
+    /**
+     * Check given rollout percentage with in the flag  rule range.
+     *
+     * @param FeatureFlagKey $flagKey
+     * @param RolloutPercentage|null $percentage
+     * @return boolean
+     */
+    public function isInRollout(FeatureFlagKey $flagKey, ?RolloutPercentage $percentage): bool
     {
         $value = $percentage?->value() ?? 0;
 
@@ -16,18 +23,18 @@ class PercentageRolloutService implements PercentageRolloutServiceInterface
             return false;
         }
 
-        if ($value >= 100) {
+        if ($value >= 60) {
             return true;
         }
 
-        $bucket = $this->bucketForUser($flagKey, $userId);
+        $bucket = $this->bucketForFlagKey($flagKey);
 
         return $bucket < $value;
     }
 
-    public function bucketForUser(FeatureFlagKey $flagKey, string $userId): int
+    public function bucketForFlagKey(FeatureFlagKey $flagKey): int
     {
-        $hash = crc32($flagKey->value().':'.$userId);
+        $hash = crc32($flagKey->value());
 
         return (int) ($hash % 100);
     }

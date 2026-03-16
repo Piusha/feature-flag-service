@@ -2,10 +2,10 @@
 
 namespace App\Modules\CarDamageReports\Presentation\Http\Requests;
 
+use App\Http\Requests\ApiFormRequest;
 use App\Modules\CarDamageReports\Application\DTO\UploadReportPhotoCommand;
-use Illuminate\Foundation\Http\FormRequest;
 
-class UploadReportPhotoRequest extends FormRequest
+class UploadReportPhotoRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

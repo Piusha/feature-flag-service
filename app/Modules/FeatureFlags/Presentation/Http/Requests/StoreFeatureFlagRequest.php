@@ -2,16 +2,16 @@
 
 namespace App\Modules\FeatureFlags\Presentation\Http\Requests;
 
+use App\Http\Requests\ApiFormRequest;
 use App\Modules\FeatureFlags\Application\DTO\CreateFeatureFlagCommand;
 use App\Modules\FeatureFlags\Domain\Enums\FeatureFlagScope;
 use App\Modules\FeatureFlags\Domain\Enums\FeatureFlagType;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FeatureFlagKey;
 use App\Modules\FeatureFlags\Domain\ValueObjects\FlagSchedule;
 use App\Modules\FeatureFlags\Domain\ValueObjects\RolloutPercentage;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreFeatureFlagRequest extends FormRequest
+class StoreFeatureFlagRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

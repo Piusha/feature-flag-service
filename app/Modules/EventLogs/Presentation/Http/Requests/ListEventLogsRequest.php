@@ -2,10 +2,10 @@
 
 namespace App\Modules\EventLogs\Presentation\Http\Requests;
 
+use App\Http\Requests\ApiFormRequest;
 use App\Modules\EventLogs\Domain\ValueObjects\EventLogQueryFilters;
-use Illuminate\Foundation\Http\FormRequest;
 
-class ListEventLogsRequest extends FormRequest
+class ListEventLogsRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

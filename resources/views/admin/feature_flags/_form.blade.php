@@ -1,5 +1,9 @@
 @php($isEdit = isset($featureFlag))
 @php($action = $isEdit ? route('admin.feature-flags.update', $featureFlag->id) : route('admin.feature-flags.store'))
+@php($enabledValue = old('enabled', isset($featureFlag) ? (int) $featureFlag->enabled : 1))
+@php($enabledValue = in_array((string) $enabledValue, ['0', '1'], true) ? (string) $enabledValue : ((bool) $enabledValue ? '1' : '0'))
+
+
 
 <form method="POST" action="{{ $action }}" class="space-y-5">
     @csrf
@@ -43,8 +47,8 @@
         <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Enabled</label>
             <select class="block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" name="enabled" required>
-                <option value="1" @selected((string) old('enabled', $featureFlag->enabled ?? true) === '1')>Yes</option>
-                <option value="0" @selected((string) old('enabled', $featureFlag->enabled ?? true) === '0')>No</option>
+                <option value="1" @selected($enabledValue === '1')>Yes</option>
+                <option value="0" @selected($enabledValue === '0')>No</option>
             </select>
         </div>
         <div>

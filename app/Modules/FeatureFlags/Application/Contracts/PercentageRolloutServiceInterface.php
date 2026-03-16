@@ -7,7 +7,7 @@ use App\Modules\FeatureFlags\Domain\ValueObjects\RolloutPercentage;
 
 interface PercentageRolloutServiceInterface
 {
-    public function isUserInRollout(FeatureFlagKey $flagKey, string $userId, ?RolloutPercentage $percentage): bool;
+    public function isInRollout(FeatureFlagKey $flagKey, ?RolloutPercentage $percentage): bool;
 
-    public function bucketForUser(FeatureFlagKey $flagKey, string $userId): int;
+    public function bucketForFlagKey(FeatureFlagKey $flagKey): int;
 }

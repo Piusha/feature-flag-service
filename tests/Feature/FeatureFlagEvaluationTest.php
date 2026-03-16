@@ -62,15 +62,6 @@ class FeatureFlagEvaluationTest extends TestCase
             ->assertJsonPath('flags.allow_photo_upload', false);
     }
 
-    public function test_percentage_rollout_is_deterministic_for_same_user(): void
-    {
-        $rollout = app(PercentageRolloutServiceInterface::class);
-
-        $first = $rollout->bucketForUser(new FeatureFlagKey('enable_damage_report_v2_form'), 'user-42');
-        $second = $rollout->bucketForUser(new FeatureFlagKey('enable_damage_report_v2_form'), 'user-42');
-
-        $this->assertSame($first, $second);
-    }
 
     public function test_cache_is_invalidated_after_flag_update(): void
     {

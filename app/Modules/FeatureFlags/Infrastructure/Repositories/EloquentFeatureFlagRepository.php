@@ -12,9 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class EloquentFeatureFlagRepository implements FeatureFlagRepository
 {
-    public function __construct(private readonly FeatureFlagMapper $mapper)
-    {
-    }
+    public function __construct(private readonly FeatureFlagMapper $mapper) {}
 
     public function paginate(int $perPage = 15, int $page = 1): FeatureFlagPage
     {
@@ -40,13 +38,14 @@ class EloquentFeatureFlagRepository implements FeatureFlagRepository
         return FeatureFlag::query()
             ->orderBy('id')
             ->get()
-            ->map(fn (FeatureFlag $featureFlag): FeatureFlagEntity => $this->mapper->toDomain($featureFlag))
+            ->map(fn(FeatureFlag $featureFlag): FeatureFlagEntity => $this->mapper->toDomain($featureFlag))
             ->all();
     }
 
     public function findById(int $id): ?FeatureFlagEntity
     {
         $featureFlag = FeatureFlag::query()->find($id);
+
 
         return $featureFlag ? $this->mapper->toDomain($featureFlag) : null;
     }
@@ -70,6 +69,7 @@ class EloquentFeatureFlagRepository implements FeatureFlagRepository
 
     public function update(FeatureFlagEntity $featureFlag): FeatureFlagEntity
     {
+
         return DB::transaction(function () use ($featureFlag): FeatureFlagEntity {
             $model = FeatureFlag::query()->findOrFail($featureFlag->id());
             $model->fill($this->mapper->toPersistence($featureFlag));

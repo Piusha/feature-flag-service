@@ -2,9 +2,9 @@
 
 namespace App\Modules\EventLogs\Presentation\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\ApiFormRequest;
 
-class ShowEventLogRequest extends FormRequest
+class ShowEventLogRequest extends ApiFormRequest
 {
     public function authorize(): bool
     {

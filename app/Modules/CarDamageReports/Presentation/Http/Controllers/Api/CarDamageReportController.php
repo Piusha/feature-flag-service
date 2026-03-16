@@ -12,19 +12,18 @@ use App\Modules\CarDamageReports\Presentation\Http\Requests\UpdateCarDamageRepor
 use App\Modules\CarDamageReports\Presentation\Http\Requests\UploadReportPhotoRequest;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 
 class CarDamageReportController extends Controller
 {
-    public function __construct(private readonly ManageCarDamageReportsUseCaseInterface $reports)
-    {
-    }
+    public function __construct(private readonly ManageCarDamageReportsUseCaseInterface $reports) {}
 
     public function index(): JsonResponse
     {
         $page = (int) request()->query('page', 1);
         $result = $this->reports->listPaginated(page: $page);
         $data = array_map(
-            fn ($item): array => (new CarDamageReportResource($item))->resolve(),
+            fn($item): array => (new CarDamageReportResource($item))->resolve(),
             $result->items
         );
 
@@ -41,6 +40,7 @@ class CarDamageReportController extends Controller
 
     public function store(StoreCarDamageReportRequest $request): JsonResponse
     {
+
         $report = $this->reports->create($request->toCommand());
 
         return response()->json((new CarDamageReportResource($report))->resolve(), Response::HTTP_CREATED);
@@ -88,7 +88,7 @@ class CarDamageReportController extends Controller
         }
 
         return response()->json(
-            array_map(fn ($item): array => (new ReportHistoryResource($item))->resolve(), $history)
+            array_map(fn($item): array => (new ReportHistoryResource($item))->resolve(), $history)
         );
     }
 }

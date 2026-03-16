@@ -11,9 +11,7 @@ use Illuminate\View\View;
 
 class FeatureFlagAdminPageController extends Controller
 {
-    public function __construct(private readonly ManageFeatureFlagsUseCaseInterface $manageFeatureFlags)
-    {
-    }
+    public function __construct(private readonly ManageFeatureFlagsUseCaseInterface $manageFeatureFlags) {}
 
     public function index(): View
     {
